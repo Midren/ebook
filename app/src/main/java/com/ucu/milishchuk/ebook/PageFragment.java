@@ -19,6 +19,7 @@ import android.text.TextPaint;
 import android.text.method.LinkMovementMethod;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,7 +41,7 @@ import static java.lang.Math.ceil;
 
 public class PageFragment extends android.support.v4.app.Fragment {
 
-    static ArrayList<PageIndexes> pi = new ArrayList<>();
+    static ArrayList<Integer> pi = new ArrayList<>();
     int pageNumber;
     int chapterNumber;
     TextView txt;
@@ -93,6 +94,8 @@ public class PageFragment extends android.support.v4.app.Fragment {
 //        }
 //        chapterNumber = pi.get(pageNumber).chapter;
         Log.i("Ohohoh", "" + chapterNumber);
+
+
         ll.post(new Runnable() {
             @Override
             public void run() {
@@ -108,27 +111,33 @@ public class PageFragment extends android.support.v4.app.Fragment {
         if (chapter < 0 || chapter >= spine.size()) {
             return;
         }
-//        for (int i = 0; i < spine.size(); i++) {
-//            Resource res = spine.getResource(i);
-//            String book_str = "";
-//            InputStream is = null;
-//            try {
-//                is = res.getInputStream();
-//                BufferedReader br = new BufferedReader(new InputStreamReader(is));
-//                String line;
-//                while ((line = br.readLine()) != null) {
-//                    book_str += line;
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//            int k = count_char(book_str);
-//            Log.i("epublib", "Current chapter " + i);
-//            Log.i("epublib", "Current page size: " + k + " Max Size: " + txt.getWidth() * txt.getHeight());
-//            Log.i("epublib", "Number of pages: " + (k / txt.getWidth() / txt.getHeight() + 1));
-//            Log.i("epublib", "");
-//
-//        }
+        if ( chapter == 0 && pi.size() == 0) {
+
+            for (int i = 0; i < spine.size(); i++) {
+                Resource res = spine.getResource(i);
+                String book_str = "";
+                InputStream is = null;
+                try {
+                    is = res.getInputStream();
+                    BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        book_str += line;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                int k = count_char(book_str);
+//                Log.i("epublib", "Current chapter " + i);
+//                Log.i("epublib", "Current page size: " + k + " Max Size: " + txt.getWidth() * txt.getHeight());
+//                Log.i("epublib", "Number of pages: " + (k / txt.getWidth() / txt.getHeight() + 1));
+//                Log.i("epublib", "");
+                
+                pi.add((k / txt.getWidth() / txt.getHeight() + 1));
+
+            }
+        }
+        Log.i("epublib", "pages = " + pi.get(chapter));
         Resource res = spine.getResource(chapter);
         String book_str = "";
         InputStream is = null;
@@ -185,7 +194,6 @@ public class PageFragment extends android.support.v4.app.Fragment {
         or_text = or_text.replaceAll("<head>.*</head>", "");
         or_text = or_text.replaceAll("<a.*?>", "");
         final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
-
 //        int k = count_char(or_text);
 
         int skipped = 0;
@@ -272,7 +280,7 @@ public class PageFragment extends android.support.v4.app.Fragment {
         return spannableString;
     }
 
-    private class ImageGetter implements Html.ImageGetter {
+    public class ImageGetter implements Html.ImageGetter {
         public Drawable getDrawable(String source) {
             try {
                 Resource r = BookFragment.book.getResources().getByHref(source);

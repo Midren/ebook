@@ -22,11 +22,13 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -43,12 +45,13 @@ import nl.siegmann.epublib.epub.EpubReader;
 
 import static java.lang.Math.min;
 
-public class BookFragment extends Fragment{
+public class BookFragment extends Fragment {
 
     static Book book;
     int cur_chapter = 0;
     ViewPager pager;
     PagerAdapter pagerAdapter;
+
 
     @Nullable
     @Override
@@ -90,8 +93,8 @@ public class BookFragment extends Fragment{
                 }
             }
         }
-
         pager = (ViewPager) v.findViewById(R.id.pager);
+
         pagerAdapter = new MyFragmentPagerAdapter(getFragmentManager());
         pager.setAdapter(pagerAdapter);
 
@@ -113,6 +116,8 @@ public class BookFragment extends Fragment{
         });
         return v;
     }
+
+
 
     private class MyFragmentPagerAdapter extends FragmentPagerAdapter {
         public MyFragmentPagerAdapter(FragmentManager fm) {
@@ -160,5 +165,4 @@ public class BookFragment extends Fragment{
         editor.apply();
         super.onDestroyView();
     }
-
 }
