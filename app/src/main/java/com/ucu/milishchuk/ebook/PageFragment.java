@@ -38,12 +38,12 @@ import nl.siegmann.epublib.domain.Resource;
 import nl.siegmann.epublib.domain.Spine;
 
 import static java.lang.Math.ceil;
+import static java.lang.Math.min;
 
 public class PageFragment extends android.support.v4.app.Fragment {
 
-    static ArrayList<Integer> pi = new ArrayList<>();
+    static ArrayList<PageIndexes> pi = new ArrayList<>();
     int pageNumber;
-    int chapterNumber;
     TextView txt;
     LinearLayout ll;
 
@@ -82,19 +82,6 @@ public class PageFragment extends android.support.v4.app.Fragment {
 
         pageNumber = getArguments().getInt("arg_page_num");
         Log.i("smth", "");
-//        if(pi.size() == pageNumber) {
-//            if(pageNumber == 0) {
-//                pi.add(new PageIndexes(0, 0));
-//            } else {
-//                pi.add(new PageIndexes(pi.get(pi.size() - 1).chapter, pi.get(pi.size()-1).index));
-//            }
-//        }
-//        for(PageIndexes p : pi) {
-//            Log.i("smth", p.chapter + " " + p.index);
-//        }
-//        chapterNumber = pi.get(pageNumber).chapter;
-        Log.i("Ohohoh", "" + chapterNumber);
-
 
         ll.post(new Runnable() {
             @Override
@@ -111,34 +98,54 @@ public class PageFragment extends android.support.v4.app.Fragment {
         if (chapter < 0 || chapter >= spine.size()) {
             return;
         }
-        if ( chapter == 0 && pi.size() == 0) {
-
+        if (chapter == 0 && pi.size() == 0) {
             for (int i = 0; i < spine.size(); i++) {
                 Resource res = spine.getResource(i);
-                String book_str = "";
+                String or_text = "";
                 InputStream is = null;
                 try {
                     is = res.getInputStream();
                     BufferedReader br = new BufferedReader(new InputStreamReader(is));
                     String line;
                     while ((line = br.readLine()) != null) {
-                        book_str += line;
+                        or_text += line;
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                int k = count_char(book_str);
-//                Log.i("epublib", "Current chapter " + i);
-//                Log.i("epublib", "Current page size: " + k + " Max Size: " + txt.getWidth() * txt.getHeight());
-//                Log.i("epublib", "Number of pages: " + (k / txt.getWidth() / txt.getHeight() + 1));
-//                Log.i("epublib", "");
-                
-                pi.add((k / txt.getWidth() / txt.getHeight() + 1));
+                or_text = or_text.replaceAll("</span>", "</span><br>");
+                or_text = or_text.replaceAll("<head>.*</head>", "");
+                or_text = or_text.replaceAll("<a.*?>", "");
+                final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
+
+                pi.add(new PageIndexes(i, 0));
+                int skipped = 0;
+                int line_pos = 0;
+                int lines = 0;
+                int j = 0;
+                for (; j < text.length(); j++) {
+                    if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
+                        pi.add(new PageIndexes(i, j));
+                        line_pos = 0;
+                        skipped = 0;
+                        lines = 0;
+                        continue;
+                    } else if (line_pos * 17 > txt.getWidth()) {
+                        line_pos = 0;
+                        lines += 1;
+                        continue;
+                    } else if (text.charAt(j) == '\n') {
+                        skipped += txt.getWidth() / 17 - line_pos;
+                        line_pos = 0;
+                        lines += 1;
+                        continue;
+                    }
+                    line_pos++;
+                }
 
             }
         }
-        Log.i("epublib", "pages = " + pi.get(chapter));
-        Resource res = spine.getResource(chapter);
+        Resource res = spine.getResource(pi.get(chapter).chapter);
         String book_str = "";
         InputStream is = null;
         try {
@@ -148,16 +155,16 @@ public class PageFragment extends android.support.v4.app.Fragment {
             while ((line = br.readLine()) != null) {
                 book_str += line;
             }
-            //Log.i("epublib", book_str);
-            SpannableString page_ss = hmtlToSpannable(book_str);
+            SpannableString page_ss = hmtlToSpannable(book_str, pi.get(chapter).index);
             txt.setText(page_ss);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public int count_char(String or_text) {
-        or_text = or_text.replaceAll("</span>", "</span><br>");
+
+    public SpannableString hmtlToSpannable(String or_text, int st_ind) {
+//        or_text = or_text.replaceAll("</span>", "</span><br>");
         or_text = or_text.replaceAll("<head>.*</head>", "");
         or_text = or_text.replaceAll("<a.*?>", "");
         final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
@@ -165,84 +172,43 @@ public class PageFragment extends android.support.v4.app.Fragment {
         int skipped = 0;
         int line_pos = 0;
         int lines = 0;
-        int j = 0;
-        for (; j < text.length(); j++) {
-//            if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
-//                break;
-//            } else
-            if (line_pos * 17 > txt.getWidth()) {
-                line_pos = 0;
-                lines += 1;
-                continue;
-            } else if (text.charAt(j) == '\n') {
-                skipped += txt.getWidth() / 17 - line_pos;
-                line_pos = 0;
-                lines += 1;
-                continue;
-            }
-            line_pos++;
+        int j = text.length();
+        if(pageNumber + 1 != pi.size() && pi.get(pageNumber + 1 ).chapter == pi.get(pageNumber).chapter) {
+            j = pi.get(pageNumber + 1).index;
         }
 
-        return ((lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17);
-    }
-
-    public SpannableString hmtlToSpannable(String or_text) {
-//        Log.i("Measure", "" + txt.getMeasuredWidth() +" " + txt.getMeasuredHeight());
-//        Log.i("Lines", ""+txt.getLineHeight() + " " + txt.getMaxHeight());
-
-        or_text = or_text.replaceAll("</span>", "</span><br>");
-        or_text = or_text.replaceAll("<head>.*</head>", "");
-        or_text = or_text.replaceAll("<a.*?>", "");
-        final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
-//        int k = count_char(or_text);
-
-        int skipped = 0;
-        int line_pos = 0;
-        int lines = 0;
-//        int j = pi.get(pageNumber).index;
-        int j = 0;
-        for (; j < text.length(); j++) {
-            if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
-                break;
-            } else if (line_pos * 17 > txt.getWidth()) {
-                line_pos = 0;
-                lines += 1;
-                continue;
-            } else if (text.charAt(j) == '\n') {
-                skipped += txt.getWidth() / 17 - line_pos;
-                line_pos = 0;
-                lines += 1;
-                continue;
-            }
-            line_pos++;
-        }
-
-        int stWord = 0;//pi.get(pageNumber).index;
-        int stSent = 0;//pi.get(pageNumber).index;
-        SpannableString spannableString = new SpannableString(text.subSequence(0, j));//pi.get(pageNumber).index, j));
+        SpannableString spannableString = new SpannableString(text.subSequence(st_ind, j));
         if (j == text.length() - 1) {
             --j;
         }
-        for (int i = 1; i < j; i++) {
-            if (text.charAt(i) == ' ' || text.charAt(i) == '\n' || i == j - 1) {
+        Log.i("epublib", "range: " + st_ind + "-" + j);
+        int stWord = 0;//0;
+        int stSent = 0;//0;
+        final int st_i = st_ind;
+        for (int i = 1; i <j - st_ind; i++) {//st_ind = 0
+            if (text.charAt(st_i + i) == ' ' || text.charAt(st_i + i) == '\n' || i == j -st_ind - 1) {
+                if( i == j - st_i - 1) {
+                    i = j -st_i;
+                }
                 final int st = stWord, en = i, stSen = stSent;
+
                 spannableString.setSpan(new ClickableSpan() {
                     @Override
                     public void onClick(View view) {
                         if (en - st < 2) {
                             return;
                         }
-                        String word = text.toString().substring(st, en);
+                        String word = text.toString().substring(st + st_i, en + st_i);
                         int enSen = stSen;
-                        for (int j = stSen + 1; j < text.length(); j++) {
+                        for (int q = stSen + 1 + st_i; q < text.length(); q++) {
 
-                            if (text.charAt(j) == '.' || text.charAt(j) == '?' ||
-                                    text.charAt(j) == '!' || text.charAt(j) == '\n') {
-                                enSen = j;
+                            if (text.charAt(q) == '.' || text.charAt(q) == '?' ||
+                                    text.charAt(q) == '!' || text.charAt(q) == '\n') {
+                                enSen = q - st_i;
                                 break;
                             }
                         }
-                        String sentence = text.toString().substring(stSen, enSen);
+                        String sentence = text.toString().substring(stSen + st_i, enSen + st_i);
 
                         //Log.v("TAG", "I've clicked on word " + word);
                         DialogFragment wordDialog = new WordDialog();
@@ -261,22 +227,11 @@ public class PageFragment extends android.support.v4.app.Fragment {
                 }, st, en, 0);
                 stWord = i;
             }
-            if (text.charAt(i - 1) == '.' || text.charAt(i - 1) == '?' ||
-                    text.charAt(i - 1) == '!' || text.charAt(i - 1) == '\n') {
+            if (text.charAt(st_ind + i - 1) == '.' || text.charAt(st_ind + i - 1) == '?' ||
+                    text.charAt(st_ind + i - 1) == '!' || text.charAt(st_ind + i - 1) == '\n') {
                 stSent = i;
             }
         }
-//        if (pi.get(pi.size() - 1).chapter <= chapterNumber && pi.get(pi.size() - 1).index < j) {
-//            if(pi.size() <= pageNumber) {
-//                pi.add(new PageIndexes(pageNumber, 0));
-//            }
-//            Log.i("lol", j + " " + text.length());
-//            if (j + 1>= text.length()) {
-//                pi.set(pi.size() -1, new PageIndexes(chapterNumber + 1, 0));
-//            } else {
-//                pi.set(pi.size() -1, new PageIndexes(chapterNumber, j));
-//            }
-//        }
         return spannableString;
     }
 
@@ -287,7 +242,6 @@ public class PageFragment extends android.support.v4.app.Fragment {
                 if (r == null) {
                     r = BookFragment.book.getResources().getByHref("OEBPS/" + source);
                 }
-                //Log.i("epublib", r.getHref());
                 Bitmap bm = BitmapFactory.decodeByteArray(r.getData(), 0, r.getData().length);
                 Drawable drawable = new BitmapDrawable(getResources(), bm);
                 drawable.setBounds(0, 0, drawable.getIntrinsicWidth() * 2, drawable.getIntrinsicHeight() * 2);

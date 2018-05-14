@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.domain.Resource;
@@ -64,6 +65,7 @@ public class BookFragment extends Fragment {
             try {
                 epubInputStream = getContext().getContentResolver().openInputStream(Uri.parse(uri));
                 book = (new EpubReader()).readEpub(epubInputStream);
+                PageFragment.pi = new ArrayList<>();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -87,6 +89,7 @@ public class BookFragment extends Fragment {
                 try {
                     InputStream epubInputStream = getContext().getContentResolver().openInputStream(Uri.parse(book_uri));
                     book = (new EpubReader()).readEpub(epubInputStream);
+                    PageFragment.pi = new ArrayList<>();
 //                    open_chapter(cur_chapter);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -101,7 +104,7 @@ public class BookFragment extends Fragment {
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
-                Log.d("epublib", "onPageSelected, position = " + position);
+                cur_chapter = position;
             }
 
             @Override
@@ -144,6 +147,7 @@ public class BookFragment extends Fragment {
             try {
                 InputStream epubInputStream = getContext().getContentResolver().openInputStream(uri);
                 book = (new EpubReader()).readEpub(epubInputStream);
+                PageFragment.pi = new ArrayList<>();
                 cur_chapter = 0;
 //                open_chapter(cur_chapter);
             } catch (IOException e) {
