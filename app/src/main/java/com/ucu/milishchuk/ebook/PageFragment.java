@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -65,9 +66,20 @@ public class PageFragment extends android.support.v4.app.Fragment {
         return pageFragment;
     }
 
+
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onResume() {
+        View decorView = ((Activity) getContext()).getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        super.onResume();
     }
 
     @Nullable
@@ -120,7 +132,7 @@ public class PageFragment extends android.support.v4.app.Fragment {
             int lines = 0;
             int j = 0;
             for (; j < text.length(); j++) {
-                if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
+                if (line_pos == 0 && (lines + 2) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
                     pi.add(new PageIndexes(i, j));
                     line_pos = 0;
                     skipped = 0;

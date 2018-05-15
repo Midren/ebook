@@ -1,5 +1,6 @@
 package com.ucu.milishchuk.ebook;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -16,6 +17,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -27,6 +29,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
@@ -54,11 +58,16 @@ public class BookFragment extends Fragment {
     PagerAdapter pagerAdapter;
 
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+//        ((Activity) getContext()).requestWindowFeature(Window.FEATURE_NO_TITLE);
+        super.onCreate(savedInstanceState);
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.book_view_pager, container, false);
-
         if (getArguments() != null) {
             String uri = getArguments().getString("uri", "");
             InputStream epubInputStream = null;
@@ -96,6 +105,18 @@ public class BookFragment extends Fragment {
                 }
             }
         }
+        ((AppCompatActivity) getContext()).getSupportActionBar().hide();
+        View decorView = ((Activity) getContext()).getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                        // Set the content to appear under the system bars so that the
+                        // content doesn't resize when the system bars hide and show.
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        // Hide the nav bar and status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
         pager = (ViewPager) v.findViewById(R.id.pager);
 
         pagerAdapter = new MyFragmentPagerAdapter(getFragmentManager());
@@ -121,7 +142,6 @@ public class BookFragment extends Fragment {
         });
         return v;
     }
-
 
 
     private class MyFragmentPagerAdapter extends FragmentPagerAdapter {
@@ -169,6 +189,12 @@ public class BookFragment extends Fragment {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("cur_chapter", cur_chapter);
         editor.apply();
+        ((AppCompatActivity) getContext()).getSupportActionBar().show();
+        View decorView = getActivity().getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
         super.onDestroyView();
     }
 }

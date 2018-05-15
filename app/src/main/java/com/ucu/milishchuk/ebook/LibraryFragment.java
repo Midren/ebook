@@ -84,7 +84,6 @@ public class LibraryFragment extends Fragment {
                     }
                 });
 
-
                 bookCards.add(bc);
                 adapter.notifyItemInserted(bookCards.size() - 1);
             } catch (IOException e) {
@@ -197,7 +196,7 @@ class RVAdapter extends RecyclerView.Adapter<RVAdapter.BookViewHolder> {
         }
     }
 
-    List<BookCard> bookCards;
+    private List<BookCard> bookCards;
 
     RVAdapter(List<BookCard> bookCards) {
         this.bookCards = bookCards;
@@ -212,8 +211,7 @@ class RVAdapter extends RecyclerView.Adapter<RVAdapter.BookViewHolder> {
     @Override
     public BookViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
         View v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.book_card, viewGroup, false);
-        BookViewHolder bvh = new BookViewHolder(v);
-        return bvh;
+        return new BookViewHolder(v);
     }
 
     @Override
