@@ -93,57 +93,62 @@ public class PageFragment extends android.support.v4.app.Fragment {
         return v;
     }
 
+    public void initialize_pi() {
+        Spine spine = new Spine(BookFragment.book.getTableOfContents());
+        for (int i = 0; i < spine.size(); i++) {
+            Resource res = spine.getResource(i);
+            String or_text = "";
+            InputStream is = null;
+            try {
+                is = res.getInputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    or_text += line;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            or_text = or_text.replaceAll("</span>", "</span><br>");
+            or_text = or_text.replaceAll("<head>.*</head>", "");
+            or_text = or_text.replaceAll("<a.*?>", "");
+            final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
+
+            pi.add(new PageIndexes(i, 0));
+            int skipped = 0;
+            int line_pos = 0;
+            int lines = 0;
+            int j = 0;
+            for (; j < text.length(); j++) {
+                if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
+                    pi.add(new PageIndexes(i, j));
+                    line_pos = 0;
+                    skipped = 0;
+                    lines = 0;
+                    continue;
+                } else if (line_pos * 17 > txt.getWidth()) {
+                    line_pos = 0;
+                    lines += 1;
+                    continue;
+                } else if (text.charAt(j) == '\n') {
+                    skipped += txt.getWidth() / 17 - line_pos;
+                    line_pos = 0;
+                    lines += 1;
+                    continue;
+                }
+                line_pos++;
+            }
+
+        }
+    }
+
     public void open_chapter(int chapter) {
         Spine spine = new Spine(BookFragment.book.getTableOfContents());
         if (chapter < 0 || chapter >= spine.size()) {
             return;
         }
-        if (chapter == 0 && pi.size() == 0) {
-            for (int i = 0; i < spine.size(); i++) {
-                Resource res = spine.getResource(i);
-                String or_text = "";
-                InputStream is = null;
-                try {
-                    is = res.getInputStream();
-                    BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        or_text += line;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                or_text = or_text.replaceAll("</span>", "</span><br>");
-                or_text = or_text.replaceAll("<head>.*</head>", "");
-                or_text = or_text.replaceAll("<a.*?>", "");
-                final Spanned text = Html.fromHtml(or_text, new ImageGetter(), null);
-
-                pi.add(new PageIndexes(i, 0));
-                int skipped = 0;
-                int line_pos = 0;
-                int lines = 0;
-                int j = 0;
-                for (; j < text.length(); j++) {
-                    if (line_pos == 0 && (lines + 3) * txt.getLineHeight() * 40 * 17 + skipped * 17 > txt.getWidth() * txt.getHeight()) {
-                        pi.add(new PageIndexes(i, j));
-                        line_pos = 0;
-                        skipped = 0;
-                        lines = 0;
-                        continue;
-                    } else if (line_pos * 17 > txt.getWidth()) {
-                        line_pos = 0;
-                        lines += 1;
-                        continue;
-                    } else if (text.charAt(j) == '\n') {
-                        skipped += txt.getWidth() / 17 - line_pos;
-                        line_pos = 0;
-                        lines += 1;
-                        continue;
-                    }
-                    line_pos++;
-                }
-
-            }
+        if (pi.size() == 0) {
+            initialize_pi();
         }
         Resource res = spine.getResource(pi.get(chapter).chapter);
         String book_str = "";
@@ -173,7 +178,7 @@ public class PageFragment extends android.support.v4.app.Fragment {
         int line_pos = 0;
         int lines = 0;
         int j = text.length();
-        if(pageNumber + 1 != pi.size() && pi.get(pageNumber + 1 ).chapter == pi.get(pageNumber).chapter) {
+        if (pageNumber + 1 != pi.size() && pi.get(pageNumber + 1).chapter == pi.get(pageNumber).chapter) {
             j = pi.get(pageNumber + 1).index;
         }
 
@@ -181,14 +186,14 @@ public class PageFragment extends android.support.v4.app.Fragment {
         if (j == text.length() - 1) {
             --j;
         }
-        Log.i("epublib", "range: " + st_ind + "-" + j);
+//        Log.i("epublib", "range: " + st_ind + "-" + j);
         int stWord = 0;//0;
         int stSent = 0;//0;
         final int st_i = st_ind;
-        for (int i = 1; i <j - st_ind; i++) {//st_ind = 0
-            if (text.charAt(st_i + i) == ' ' || text.charAt(st_i + i) == '\n' || i == j -st_ind - 1) {
-                if( i == j - st_i - 1) {
-                    i = j -st_i;
+        for (int i = 1; i < j - st_ind; i++) {//st_ind = 0
+            if (text.charAt(st_i + i) == ' ' || text.charAt(st_i + i) == '\n' || i == j - st_ind - 1) {
+                if (i == j - st_i - 1) {
+                    i = j - st_i;
                 }
                 final int st = stWord, en = i, stSen = stSent;
 

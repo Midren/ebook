@@ -66,6 +66,7 @@ public class LibraryFragment extends Fragment {
         View v = inflater.inflate(R.layout.library_fragment, container, false);
 
         FloatingActionButton fab = v.findViewById(R.id.fab);
+        fab.setImageResource(R.drawable.ic_add_black_24dp);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

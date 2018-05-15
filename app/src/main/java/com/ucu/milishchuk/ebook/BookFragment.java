@@ -100,11 +100,13 @@ public class BookFragment extends Fragment {
 
         pagerAdapter = new MyFragmentPagerAdapter(getFragmentManager());
         pager.setAdapter(pagerAdapter);
+        pager.setCurrentItem(cur_chapter);
 
         pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
                 cur_chapter = position;
+//                Log.i("epublib", "" + cur_chapter);
             }
 
             @Override
