@@ -39,6 +39,12 @@ public class MainActivity extends AppCompatActivity
 
         AppDataBase db = Room.databaseBuilder(getApplicationContext(), AppDataBase.class,
                 "database").allowMainThreadQueries().build();
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        LibraryFragment fragment = new LibraryFragment();
+        fragmentTransaction.replace(R.id.container, fragment);
+        fragmentTransaction.commit();
     }
 
     @Override

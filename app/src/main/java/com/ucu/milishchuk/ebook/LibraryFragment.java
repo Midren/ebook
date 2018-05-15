@@ -33,6 +33,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.epub.EpubReader;
 
@@ -40,6 +47,7 @@ public class LibraryFragment extends Fragment {
     RecyclerView rv;
     LinearLayoutManager llm;
     RVAdapter adapter;
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 21 && resultCode == Activity.RESULT_OK) {
@@ -47,18 +55,38 @@ public class LibraryFragment extends Fragment {
             try {
                 InputStream epubInputStream = getContext().getContentResolver().openInputStream(uri);
                 Book book = (new EpubReader()).readEpub(epubInputStream);
-                BookCard bc;
-                if(book.getMetadata().getAuthors().isEmpty()) {
+                final BookCard bc;
+                if (book.getMetadata().getAuthors().isEmpty()) {
                     bc = new BookCard(book.getTitle(), "", uri.toString());
                 } else {
                     bc = new BookCard(book.getTitle(), book.getMetadata().getAuthors().get(0).toString(), uri.toString());
                 }
-                AppDataBase db = App.getInstance().getDatabase();
-                BookCardDao bookCardDao = db.bookCardDao();
-                bookCardDao.insert(bc);
-                Log.i("epublib", bookCardDao.getAll().size() + "");
+                Completable.fromAction(new Action() {
+                    @Override
+                    public void run() throws Exception {
+                        AppDataBase db = App.getInstance().getDatabase();
+                        BookCardDao bookCardDao = db.bookCardDao();
+                        bookCardDao.insert(bc);
+                        Log.i("epublib", "Inserted");
+                    }
+                }).observeOn(AndroidSchedulers.mainThread())
+                        .subscribeOn(Schedulers.io()).subscribe(new CompletableObserver() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                    }
+
+                    @Override
+                    public void onComplete() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                    }
+                });
+
+
                 bookCards.add(bc);
-                adapter.notifyItemInserted(bookCards.size()-1);
+                adapter.notifyItemInserted(bookCards.size() - 1);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -87,9 +115,23 @@ public class LibraryFragment extends Fragment {
         llm = new LinearLayoutManager(getContext());
         rv.setLayoutManager(llm);
         DividerItemDecoration itemDecorator = new DividerItemDecoration(getContext(), llm.getOrientation());
-        itemDecorator.setDrawable(ResourcesCompat.getDrawable(getResources(),R.drawable.divider, null));
+        itemDecorator.setDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.divider, null));
         rv.addItemDecoration(itemDecorator);
         initializeData();
+
+        AppDataBase db = App.getInstance().getDatabase();
+        db.bookCardDao().getAll().subscribeOn(Schedulers.io()).
+                observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<List<BookCard>>() {
+            @Override
+            public void accept(List<BookCard> bookCards_) throws Exception {
+                bookCards.clear();
+                bookCards.addAll(bookCards_);
+                adapter.notifyDataSetChanged();
+//                adapter.notifyItemInserted(bookCards.size() - 1);
+                Log.i("epublib", bookCards.size() + "");
+            }
+        });
+
         adapter = new RVAdapter(bookCards);
         rv.setAdapter(adapter);
 
@@ -144,7 +186,7 @@ class RVAdapter extends RecyclerView.Adapter<RVAdapter.BookViewHolder> {
                 @Override
                 public void onClick(View v) {
                     Log.i("epublib", bookUri.getText().toString());
-                    AppCompatActivity activity = (AppCompatActivity)v.getContext();
+                    AppCompatActivity activity = (AppCompatActivity) v.getContext();
                     Bundle bundle = new Bundle();
                     bundle.putString("uri", bookUri.getText().toString());
                     BookFragment fragment = new BookFragment();

@@ -8,14 +8,16 @@ import android.arch.persistence.room.Update;
 
 import java.util.List;
 
+import io.reactivex.Flowable;
+
 @Dao
 public interface BookCardDao {
 
     @Query("SELECT * FROM bookcard")
-    List<BookCard> getAll();
+    Flowable<List<BookCard> > getAll();
 
     @Query("SELECT * FROM bookcard WHERE id = :id")
-    BookCard getById(long id);
+    Flowable<List<BookCard> > getById(long id);
 
     @Insert
     void insert(BookCard bookCard);
