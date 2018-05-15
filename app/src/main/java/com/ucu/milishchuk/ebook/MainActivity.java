@@ -1,5 +1,7 @@
 package com.ucu.milishchuk.ebook;
 
+import android.arch.persistence.room.Room;
+import android.arch.persistence.room.RoomDatabase;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -34,6 +36,9 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        AppDataBase db = Room.databaseBuilder(getApplicationContext(), AppDataBase.class,
+                "database").allowMainThreadQueries().build();
     }
 
     @Override

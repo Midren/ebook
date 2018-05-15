@@ -1,6 +1,9 @@
 package com.ucu.milishchuk.ebook;
 
 import android.app.Activity;
+import android.arch.persistence.room.Dao;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.PrimaryKey;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.content.Context;
@@ -46,16 +49,20 @@ public class LibraryFragment extends Fragment {
                 Book book = (new EpubReader()).readEpub(epubInputStream);
                 BookCard bc;
                 if(book.getMetadata().getAuthors().isEmpty()) {
-                    bc = new BookCard(book.getTitle(), "", uri);
+                    bc = new BookCard(book.getTitle(), "", uri.toString());
                 } else {
-                    bc = new BookCard(book.getTitle(), book.getMetadata().getAuthors().get(0).toString(), uri);
+                    bc = new BookCard(book.getTitle(), book.getMetadata().getAuthors().get(0).toString(), uri.toString());
                 }
+                AppDataBase db = App.getInstance().getDatabase();
+                BookCardDao bookCardDao = db.bookCardDao();
+                bookCardDao.insert(bc);
+                Log.i("epublib", bookCardDao.getAll().size() + "");
                 bookCards.add(bc);
                 adapter.notifyItemInserted(bookCards.size()-1);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Log.i("epublib", Integer.toString(bookCards.size()));
+//            Log.i("epublib", Integer.toString(bookCards.size()));
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -99,15 +106,22 @@ public class LibraryFragment extends Fragment {
 
 }
 
+@Entity
 class BookCard {
+
+    @PrimaryKey
+    long id;
+    static long max_id = 0;
     String name;
     String author;
-    Uri uri;
+    String uri;
 
-    BookCard(String name, String author, Uri uri) {
+    BookCard(String name, String author, String uri) {
+        this.id = max_id;
         this.name = name;
         this.author = author;
         this.uri = uri;
+        ++max_id;
     }
 }
 
@@ -169,7 +183,7 @@ class RVAdapter extends RecyclerView.Adapter<RVAdapter.BookViewHolder> {
     public void onBindViewHolder(@NonNull BookViewHolder bookViewHolder, int i) {
         bookViewHolder.bookName.setText(bookCards.get(i).name);
         bookViewHolder.bookAuthor.setText(bookCards.get(i).author);
-        bookViewHolder.bookUri.setText(bookCards.get(i).uri.toString());
+        bookViewHolder.bookUri.setText(bookCards.get(i).uri);
     }
 }
 
